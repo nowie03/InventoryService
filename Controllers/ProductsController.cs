@@ -164,6 +164,10 @@ namespace InventoryService.Controllers
             if (_context.ProductImages == null)
                 return NoContent();
 
+            Product? product = await _context.Products.FindAsync(productImage.ProductId);
+
+            if (product == null) return BadRequest();
+
             try
             {
 
@@ -206,9 +210,23 @@ namespace InventoryService.Controllers
             {
                 return NotFound();
             }
+            var transaction=_context.Database.BeginTransaction();
+            try
+            {
+                _context.Products.Remove(product);
+                ProductImage[] images = _context.ProductImages.Where(image => image.ProductId==id).ToArray();
+                _context.ProductImages.RemoveRange(images);
+                await _context.SaveChangesAsync();
+                transaction.Commit();
+                return NoContent();
+            }
+            catch (Exception ex) 
+            {
 
-            _context.Products.Remove(product);
-            await _context.SaveChangesAsync();
+                transaction.Rollback();
+                return Problem(ex.Message);
+            }
+
 
             return NoContent();
         }
