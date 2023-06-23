@@ -197,6 +197,25 @@ namespace InventoryService.Controllers
             return CreatedAtAction("GetProduct", new { id = product.Id }, product);
         }
 
+        [HttpDelete]
+        [Route("/image")]
+        public async Task<ActionResult> DeleteProductImage(int id)
+        {
+            if(_context.ProductImages==null)
+                return NoContent();
+
+            ProductImage? productImage = await _context.ProductImages.FindAsync(id);
+
+            if (productImage == null)
+                return BadRequest();
+
+            _context.ProductImages.Remove(productImage);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+
+        }
+
         // DELETE: api/Products/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
@@ -217,6 +236,7 @@ namespace InventoryService.Controllers
                 ProductImage[] images = _context.ProductImages.Where(image => image.ProductId==id).ToArray();
                 _context.ProductImages.RemoveRange(images);
                 await _context.SaveChangesAsync();
+
                 transaction.Commit();
                 return NoContent();
             }
@@ -228,7 +248,7 @@ namespace InventoryService.Controllers
             }
 
 
-            return NoContent();
+            
         }
 
         private bool ProductExists(int id)
