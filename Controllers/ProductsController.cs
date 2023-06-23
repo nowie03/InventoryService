@@ -10,6 +10,7 @@ using InventoryService.Models;
 using InventoryService.ResponseModels;
 using Azure;
 
+
 namespace InventoryService.Controllers
 {
     [Route("api/[controller]")]
@@ -89,7 +90,19 @@ namespace InventoryService.Controllers
             return _context.Categories.ToList();
         }
 
-       
+        [HttpGet]
+        [Route("/image")]
+        public async Task<ActionResult<IEnumerable<ProductImage>>> getImages(int productId)
+        {
+            if (_context.ProductImages == null)
+            {
+                return NotFound();
+            }
+
+            return _context.ProductImages.Where(image=>image.ProductId==productId).ToList();
+        }
+
+
 
 
 
@@ -139,6 +152,27 @@ namespace InventoryService.Controllers
                 return Ok(category);
 
             }catch(Exception ex)
+            {
+                return Problem(ex.Message);
+            }
+        }
+
+        [HttpPost]
+        [Route("/image")]
+        public async Task<ActionResult<Category>> PostProductImage(ProductImage productImage)
+        {
+            if (_context.ProductImages == null)
+                return NoContent();
+
+            try
+            {
+
+                await _context.ProductImages.AddAsync(productImage);
+                await _context.SaveChangesAsync();
+                return Ok(productImage);
+
+            }
+            catch (Exception ex)
             {
                 return Problem(ex.Message);
             }
