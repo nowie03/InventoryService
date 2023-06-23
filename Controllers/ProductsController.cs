@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using InventoryService.Context;
 using InventoryService.Models;
+using InventoryService.ResponseModels;
+using Azure;
 
 namespace InventoryService.Controllers
 {
@@ -23,14 +25,32 @@ namespace InventoryService.Controllers
 
         // GET: api/Products
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
+        public async Task<ActionResult<IEnumerable<ProductGetResponse>>> GetProducts()
         {
           if (_context.Products == null)
           {
               return NotFound();
           }
-            return await _context.Products.ToListAsync();
+            try {
+            var products= await _context.Products.ToListAsync();
+            
+            List<ProductGetResponse> response = new();
+
+                foreach(Product product in products)
+                {
+                    Category? category = await _context.Categories.FindAsync(product.CategoryId) ?? throw new Exception($"unable to find category for product {product.Id}");
+                    List<ProductImage>? productImages = _context.ProductImages.Where(image => image.ProductId == product.Id).ToList()??throw new Exception($"unable to get images for products {product.Id}");
+
+                    response.Add(new ProductGetResponse(product.Id, category, product.Price, product.Description, product.Address, productImages));
+                }
+                    return Ok(response);
+               
+            }catch(Exception ex)
+            {
+                return Problem(ex.Message);
+            }
         }
+
 
         // GET: api/Products/5
         [HttpGet("{id}")]
@@ -40,15 +60,38 @@ namespace InventoryService.Controllers
           {
               return NotFound();
           }
-            var product = await _context.Products.FindAsync(id);
+            Product? product = await _context.Products.FindAsync(id);
 
-            if (product == null)
+            if (product == null)return NotFound();
+
+            try {
+
+                Category? category = await _context.Categories.FindAsync(product.CategoryId) ?? throw new Exception($"unable to find category for product {product.Id}");
+                List<ProductImage>? productImages = _context.ProductImages.Where(image => image.ProductId == product.Id).ToList() ?? throw new Exception($"unable to get images for products {product.Id}");
+
+                return Ok(new ProductGetResponse(product.Id, category, product.Price, product.Description, product.Address, productImages));
+            }
+            catch(Exception ex)
+            {
+                return Problem(ex.Message);
+            }
+        }
+
+        [HttpGet]
+        [Route("/category")]
+        public async Task<ActionResult<IEnumerable<Category>>> getCategories()
+        {
+            if (_context.Categories == null)
             {
                 return NotFound();
             }
 
-            return product;
+            return _context.Categories.ToList();
         }
+
+       
+
+
 
         // PUT: api/Products/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
@@ -79,6 +122,26 @@ namespace InventoryService.Controllers
             }
 
             return NoContent();
+        }
+
+        [HttpPost]
+        [Route("/category")]
+        public async Task<ActionResult<Category>> PostCategory(Category category)
+        {
+            if (_context.Categories == null)
+                return NoContent();
+
+            try
+            {
+
+                await _context.Categories.AddAsync(category);
+                await _context.SaveChangesAsync();
+                return Ok(category);
+
+            }catch(Exception ex)
+            {
+                return Problem(ex.Message);
+            }
         }
 
         // POST: api/Products
