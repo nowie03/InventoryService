@@ -26,21 +26,25 @@ namespace InventoryService.Controllers
 
         // GET: api/Products
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ProductGetResponse>>> GetProducts()
+        public async Task<ActionResult<IEnumerable<ProductGetResponse>>> GetProducts(int limit ,int skip)
         {
           if (_context.Products == null)
           {
               return NotFound();
           }
             try {
-            var products= await _context.Products.ToListAsync();
+
+            var products= await _context.Products
+                    .Skip(skip*limit)
+                    .AsNoTracking()
+                    .ToListAsync();
             
             List<ProductGetResponse> response = new();
 
                 foreach(Product product in products)
                 {
                     Category? category = await _context.Categories.FindAsync(product.CategoryId) ?? throw new Exception($"unable to find category for product {product.Id}");
-                    List<ProductImage>? productImages = _context.ProductImages.Where(image => image.ProductId == product.Id).ToList()??throw new Exception($"unable to get images for products {product.Id}");
+                    IEnumerable<ProductImage>? productImages = _context.ProductImages.Where(image => image.ProductId == product.Id)??throw new Exception($"unable to get images for products {product.Id}");
 
                     response.Add(new ProductGetResponse(product.Id, category, product.Price, product.Description, product.Address, productImages));
                 }
@@ -68,7 +72,7 @@ namespace InventoryService.Controllers
             try {
 
                 Category? category = await _context.Categories.FindAsync(product.CategoryId) ?? throw new Exception($"unable to find category for product {product.Id}");
-                List<ProductImage>? productImages = _context.ProductImages.Where(image => image.ProductId == product.Id).ToList() ?? throw new Exception($"unable to get images for products {product.Id}");
+                IEnumerable<ProductImage>? productImages = _context.ProductImages.AsNoTracking().Where(image => image.ProductId == product.Id) ?? throw new Exception($"unable to get images for products {product.Id}");
 
                 return Ok(new ProductGetResponse(product.Id, category, product.Price, product.Description, product.Address, productImages));
             }
@@ -87,7 +91,7 @@ namespace InventoryService.Controllers
                 return NotFound();
             }
 
-            return _context.Categories.ToList();
+            return Ok(_context.Categories.AsNoTracking());
         }
 
         [HttpGet]
@@ -99,7 +103,7 @@ namespace InventoryService.Controllers
                 return NotFound();
             }
 
-            return _context.ProductImages.Where(image=>image.ProductId==productId).ToList();
+            return Ok( _context.ProductImages.AsNoTracking().Where(image=>image.ProductId==productId));
         }
 
 
@@ -164,7 +168,8 @@ namespace InventoryService.Controllers
             if (_context.ProductImages == null)
                 return NoContent();
 
-            Product? product = await _context.Products.FindAsync(productImage.ProductId);
+            Product? product = await _context.Products
+                .FindAsync(productImage.ProductId);
 
             if (product == null) return BadRequest();
 
