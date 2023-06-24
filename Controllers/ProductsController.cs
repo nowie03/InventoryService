@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using InventoryService.Context;
+﻿using InventoryService.Context;
 using InventoryService.Models;
 using InventoryService.ResponseModels;
-using Azure;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace InventoryService.Controllers
@@ -26,31 +20,33 @@ namespace InventoryService.Controllers
 
         // GET: api/Products
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ProductGetResponse>>> GetProducts(int limit ,int skip)
+        public async Task<ActionResult<IEnumerable<ProductGetResponse>>> GetProducts(int limit, int skip)
         {
-          if (_context.Products == null)
-          {
-              return NotFound();
-          }
-            try {
+            if (_context.Products == null)
+            {
+                return NotFound();
+            }
+            try
+            {
 
-            var products= await _context.Products
-                    .Skip(skip*limit)
-                    .AsNoTracking()
-                    .ToListAsync();
-            
-            List<ProductGetResponse> response = new();
+                var products = await _context.Products
+                        .Skip(skip * limit)
+                        .AsNoTracking()
+                        .ToListAsync();
 
-                foreach(Product product in products)
+                List<ProductGetResponse> response = new();
+
+                foreach (Product product in products)
                 {
                     Category? category = await _context.Categories.FindAsync(product.CategoryId) ?? throw new Exception($"unable to find category for product {product.Id}");
-                    IEnumerable<ProductImage>? productImages = _context.ProductImages.Where(image => image.ProductId == product.Id)??throw new Exception($"unable to get images for products {product.Id}");
+                    IEnumerable<ProductImage>? productImages = _context.ProductImages.Where(image => image.ProductId == product.Id) ?? throw new Exception($"unable to get images for products {product.Id}");
 
                     response.Add(new ProductGetResponse(product.Id, category, product.Price, product.Description, product.Address, productImages));
                 }
-                    return Ok(response);
-               
-            }catch(Exception ex)
+                return Ok(response);
+
+            }
+            catch (Exception ex)
             {
                 return Problem(ex.Message);
             }
@@ -61,22 +57,23 @@ namespace InventoryService.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(int id)
         {
-          if (_context.Products == null)
-          {
-              return NotFound();
-          }
+            if (_context.Products == null)
+            {
+                return NotFound();
+            }
             Product? product = await _context.Products.FindAsync(id);
 
-            if (product == null)return NotFound();
+            if (product == null) return NotFound();
 
-            try {
+            try
+            {
 
                 Category? category = await _context.Categories.FindAsync(product.CategoryId) ?? throw new Exception($"unable to find category for product {product.Id}");
                 IEnumerable<ProductImage>? productImages = _context.ProductImages.AsNoTracking().Where(image => image.ProductId == product.Id) ?? throw new Exception($"unable to get images for products {product.Id}");
 
                 return Ok(new ProductGetResponse(product.Id, category, product.Price, product.Description, product.Address, productImages));
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return Problem(ex.Message);
             }
@@ -103,7 +100,7 @@ namespace InventoryService.Controllers
                 return NotFound();
             }
 
-            return Ok( _context.ProductImages.AsNoTracking().Where(image=>image.ProductId==productId));
+            return Ok(_context.ProductImages.AsNoTracking().Where(image => image.ProductId == productId));
         }
 
 
@@ -155,7 +152,8 @@ namespace InventoryService.Controllers
                 await _context.SaveChangesAsync();
                 return Ok(category);
 
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 return Problem(ex.Message);
             }
@@ -192,10 +190,10 @@ namespace InventoryService.Controllers
         [HttpPost]
         public async Task<ActionResult<Product>> PostProduct(Product product)
         {
-          if (_context.Products == null)
-          {
-              return Problem("Entity set 'ServiceContext.Products'  is null.");
-          }
+            if (_context.Products == null)
+            {
+                return Problem("Entity set 'ServiceContext.Products'  is null.");
+            }
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
 
@@ -206,7 +204,7 @@ namespace InventoryService.Controllers
         [Route("/image")]
         public async Task<ActionResult> DeleteProductImage(int id)
         {
-            if(_context.ProductImages==null)
+            if (_context.ProductImages == null)
                 return NoContent();
 
             ProductImage? productImage = await _context.ProductImages.FindAsync(id);
@@ -234,18 +232,18 @@ namespace InventoryService.Controllers
             {
                 return NotFound();
             }
-            var transaction=_context.Database.BeginTransaction();
+            var transaction = _context.Database.BeginTransaction();
             try
             {
                 _context.Products.Remove(product);
-                ProductImage[] images = _context.ProductImages.Where(image => image.ProductId==id).ToArray();
+                ProductImage[] images = _context.ProductImages.Where(image => image.ProductId == id).ToArray();
                 _context.ProductImages.RemoveRange(images);
                 await _context.SaveChangesAsync();
 
                 transaction.Commit();
                 return NoContent();
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
 
                 transaction.Rollback();
@@ -253,7 +251,7 @@ namespace InventoryService.Controllers
             }
 
 
-            
+
         }
 
         private bool ProductExists(int id)

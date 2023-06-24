@@ -1,5 +1,4 @@
 ﻿using InventoryService.Models;
-using System.Drawing;
 
 namespace InventoryService.ResponseModels
 {
@@ -7,10 +6,10 @@ namespace InventoryService.ResponseModels
     {
         public int Id { get; set; }
 
-       
+
         public Category Category { get; set; }
 
-    
+
         public double Price { get; set; }
 
 
@@ -21,7 +20,8 @@ namespace InventoryService.ResponseModels
         public IEnumerable<ProductImage> Images { get; set; }
 
 
-        public ProductGetResponse(int id,Category category,double price,string description,string address,IEnumerable<ProductImage>images) {
+        public ProductGetResponse(int id, Category category, double price, string description, string address, IEnumerable<ProductImage> images)
+        {
             Id = id;
             Category = category;
             Price = price;

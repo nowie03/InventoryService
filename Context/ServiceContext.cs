@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace InventoryService.Context
 {
-    public class ServiceContext:DbContext
+    public class ServiceContext : DbContext
     {
-        public ServiceContext(DbContextOptions options):base(options) { }
+        public ServiceContext(DbContextOptions options) : base(options) { }
 
         public DbSet<Product> Products { get; set; }
 

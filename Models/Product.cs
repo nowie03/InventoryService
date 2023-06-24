@@ -9,7 +9,7 @@ namespace InventoryService.Models
 
         [Required]
         public int CategoryId { get; set; }
-     
+
 
         [Required]
         public double Price { get; set; }
