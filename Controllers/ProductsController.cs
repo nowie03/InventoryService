@@ -1,4 +1,5 @@
 ﻿using InventoryService.Context;
+using InventoryService.MessageBroker;
 using InventoryService.Models;
 using InventoryService.ResponseModels;
 using Microsoft.AspNetCore.Mvc;
@@ -12,10 +13,12 @@ namespace InventoryService.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly ServiceContext _context;
+        private readonly IMessageBrokerClient _rabbitMQClient;
 
-        public ProductsController(ServiceContext context)
+        public ProductsController(ServiceContext context,IServiceProvider serviceProvider)
         {
             _context = context;
+            _rabbitMQClient=serviceProvider.GetRequiredService<IMessageBrokerClient>(); 
         }
 
         // GET: api/Products
@@ -239,6 +242,8 @@ namespace InventoryService.Controllers
                 ProductImage[] images = _context.ProductImages.Where(image => image.ProductId == id).ToArray();
                 _context.ProductImages.RemoveRange(images);
                 await _context.SaveChangesAsync();
+
+                _rabbitMQClient.SendMessage(product, Constants.EventTypes.PRODUCT_DELETED);
 
                 transaction.Commit();
                 return NoContent();
