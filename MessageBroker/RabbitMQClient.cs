@@ -4,6 +4,8 @@ using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
 using System.Text;
 using InventoryService.Models;
+using InventoryService.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace InventoryService.MessageBroker
 {
@@ -13,10 +15,12 @@ namespace InventoryService.MessageBroker
         private IConnection _connection;
         private IModel _channel;
         private string _queueName = "service-queue";
+        private readonly IServiceProvider _serviceProvider;
 
-        public RabbitMQClient()
+        public RabbitMQClient(IServiceProvider serviceProvider)
         {
             SetupClient();
+            _serviceProvider = serviceProvider;
         }
 
         public void Dispose()
@@ -41,12 +45,53 @@ namespace InventoryService.MessageBroker
                 _channel = _connection.CreateModel();
                 //declare the queue after mentioning name and a few property related to that
                 _channel.QueueDeclare(_queueName, exclusive: false);
+
+                _channel.ConfirmSelect();
+
+                _channel.BasicAcks += (sender, ea) => HandleMessageAcknowledge(ea.DeliveryTag, ea.Multiple);
+
             }catch(BrokerUnreachableException ex)
             {
                 Console.WriteLine(ex.ToString());
             }
         }
-        public void SendMessage<T>(T message, string eventType)
+
+        private async Task HandleMessageAcknowledge(ulong currentSequenceNumber, bool multiple)
+        {
+            try
+            {
+                var scope = _serviceProvider.CreateScope();
+
+                var dbContext = scope.ServiceProvider.GetRequiredService<ServiceContext>();
+
+                if (multiple) {
+
+                    await dbContext.Outbox.
+                        Where(message => message.SequenceNumber <= currentSequenceNumber)
+                        .ExecuteUpdateAsync(
+                        entity => entity.SetProperty(
+                            message => message.State,
+                            Constants.EventStates.EVENT_ACK_COMPLETED
+                            )
+                        );
+                }
+                else { 
+                    Message messageToBeUpdated=await dbContext.Outbox.FirstAsync(message=>message.SequenceNumber==currentSequenceNumber);
+
+                    if( messageToBeUpdated != null )
+                    {
+                        messageToBeUpdated.State = Constants.EventStates.EVENT_ACK_COMPLETED;
+                    }
+
+                    await dbContext.SaveChangesAsync();
+                }
+            }catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        public void SendMessage(Message message)
         {
 
             //Serialize the message
@@ -55,9 +100,9 @@ namespace InventoryService.MessageBroker
                 return;
 
 
-            Message<T> eventMessage = new Message<T>(eventType, message);
+           
 
-            string json = JsonConvert.SerializeObject(eventMessage);
+            string json = JsonConvert.SerializeObject(message);
 
             var body = Encoding.UTF8.GetBytes(json);
 
@@ -66,6 +111,9 @@ namespace InventoryService.MessageBroker
             _channel.BasicPublish(exchange: "", routingKey: _queueName, body: body);
         }
 
-     
+        public ulong GetNextSequenceNumber()
+        {
+            return _channel.NextPublishSeqNo;
+        }
     }
 }

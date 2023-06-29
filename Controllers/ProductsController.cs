@@ -4,7 +4,7 @@ using InventoryService.Models;
 using InventoryService.ResponseModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
+using Newtonsoft.Json;
 
 namespace InventoryService.Controllers
 {
@@ -235,7 +235,7 @@ namespace InventoryService.Controllers
             {
                 return NotFound();
             }
-            var transaction = _context.Database.BeginTransaction();
+            var transaction =await _context.Database.BeginTransactionAsync();
             try
             {
                 _context.Products.Remove(product);
@@ -243,15 +243,22 @@ namespace InventoryService.Controllers
                 _context.ProductImages.RemoveRange(images);
                 await _context.SaveChangesAsync();
 
-                _rabbitMQClient.SendMessage(product, Constants.EventTypes.PRODUCT_DELETED);
+                //send message to outbox
+                string serializedProduct = JsonConvert.SerializeObject(product);
+                ulong nextSequenceNumber = _rabbitMQClient.GetNextSequenceNumber();
 
-                transaction.Commit();
+                Message message=new(Constants.EventTypes.PRODUCT_DELETED, serializedProduct, nextSequenceNumber,Constants.EventStates.EVENT_ACK_PENDING);
+
+                await _context.AddAsync(message);
+                await _context.SaveChangesAsync();
+
+               await transaction.CommitAsync();
                 return NoContent();
             }
             catch (Exception ex)
             {
 
-                transaction.Rollback();
+                await transaction.RollbackAsync();
                 return Problem(ex.Message);
             }
 

@@ -13,6 +13,8 @@ namespace InventoryService.Context
 
         public DbSet<ProductImage> ProductImages { get; set; }
 
+        public DbSet<Message> Outbox { get; set; }
+
         override
         protected void OnModelCreating(ModelBuilder modelBuilder)
         {
