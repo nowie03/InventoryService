@@ -83,7 +83,7 @@ namespace InventoryService.Controllers
         }
 
         [HttpGet]
-        [Route("/category")]
+        [Route("category")]
         public async Task<ActionResult<IEnumerable<Category>>> getCategories()
         {
             if (_context.Categories == null)
@@ -95,7 +95,7 @@ namespace InventoryService.Controllers
         }
 
         [HttpGet]
-        [Route("/image")]
+        [Route("image")]
         public async Task<ActionResult<IEnumerable<ProductImage>>> getImages(int productId)
         {
             if (_context.ProductImages == null)
@@ -142,7 +142,7 @@ namespace InventoryService.Controllers
         }
 
         [HttpPost]
-        [Route("/category")]
+        [Route("category")]
         public async Task<ActionResult<Category>> PostCategory(Category category)
         {
             if (_context.Categories == null)
@@ -163,7 +163,7 @@ namespace InventoryService.Controllers
         }
 
         [HttpPost]
-        [Route("/image")]
+        [Route("image")]
         public async Task<ActionResult<Category>> PostProductImage(ProductImage productImage)
         {
             if (_context.ProductImages == null)
@@ -204,7 +204,7 @@ namespace InventoryService.Controllers
         }
 
         [HttpDelete]
-        [Route("/image")]
+        [Route("image")]
         public async Task<ActionResult> DeleteProductImage(int id)
         {
             if (_context.ProductImages == null)
