@@ -15,11 +15,11 @@ namespace InventoryService
 
             builder.Services.AddDbContext<ServiceContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("local-server")));
 
-            builder.Services.AddScoped<IMessageBrokerClient,RabbitMQClient>();
+            builder.Services.AddScoped<IMessageBrokerClient, RabbitMQClient>();
 
             builder.Services.AddSingleton<PublishMessageToQueue>();
             builder.Services.AddHostedService<PublishMessageToQueue>(
-                provider=>provider.GetRequiredService<PublishMessageToQueue>());
+                provider => provider.GetRequiredService<PublishMessageToQueue>());
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

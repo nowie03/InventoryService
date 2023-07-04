@@ -8,6 +8,6 @@ namespace InventoryService.MessageBroker
 
         public ulong GetNextSequenceNumber();
 
-       
+
     }
 }

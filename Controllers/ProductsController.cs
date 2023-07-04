@@ -15,10 +15,10 @@ namespace InventoryService.Controllers
         private readonly ServiceContext _context;
         private readonly IMessageBrokerClient _rabbitMQClient;
 
-        public ProductsController(ServiceContext context,IServiceProvider serviceProvider)
+        public ProductsController(ServiceContext context, IServiceProvider serviceProvider)
         {
             _context = context;
-            _rabbitMQClient=serviceProvider.GetRequiredService<IMessageBrokerClient>(); 
+            _rabbitMQClient = serviceProvider.GetRequiredService<IMessageBrokerClient>();
         }
 
         // GET: api/Products
@@ -33,7 +33,8 @@ namespace InventoryService.Controllers
             {
 
                 var products = await _context.Products
-                        .Skip(skip * limit)
+                        .Skip((skip - 1) * limit)
+                        .Take(limit)
                         .AsNoTracking()
                         .ToListAsync();
 
@@ -235,7 +236,7 @@ namespace InventoryService.Controllers
             {
                 return NotFound();
             }
-            var transaction =await _context.Database.BeginTransactionAsync();
+            var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 _context.Products.Remove(product);
@@ -247,12 +248,12 @@ namespace InventoryService.Controllers
                 string serializedProduct = JsonConvert.SerializeObject(product);
                 ulong nextSequenceNumber = _rabbitMQClient.GetNextSequenceNumber();
 
-                Message message=new(Constants.EventTypes.PRODUCT_DELETED, serializedProduct, nextSequenceNumber,Constants.EventStates.EVENT_ACK_PENDING);
+                Message message = new(Constants.EventTypes.PRODUCT_DELETED, serializedProduct, nextSequenceNumber, Constants.EventStates.EVENT_ACK_PENDING);
 
                 await _context.AddAsync(message);
                 await _context.SaveChangesAsync();
 
-               await transaction.CommitAsync();
+                await transaction.CommitAsync();
                 return NoContent();
             }
             catch (Exception ex)

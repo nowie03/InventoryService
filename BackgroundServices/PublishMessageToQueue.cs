@@ -1,10 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.Collections.Concurrent;
-using InventoryService.Constants;
-
+﻿using InventoryService.Context;
 using InventoryService.MessageBroker;
 using InventoryService.Models;
-using InventoryService.Context;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Concurrent;
 
 
 namespace InventoryService.BackgroundServices

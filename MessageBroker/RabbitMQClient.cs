@@ -1,15 +1,14 @@
-﻿using Newtonsoft.Json;
+﻿using InventoryService.Context;
+using InventoryService.Models;
+using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
 using System.Text;
-using InventoryService.Models;
-using InventoryService.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace InventoryService.MessageBroker
 {
-    public class RabbitMQClient : IMessageBrokerClient , IDisposable
+    public class RabbitMQClient : IMessageBrokerClient, IDisposable
     {
         private ConnectionFactory _connectionFactory;
         private IConnection _connection;
@@ -44,13 +43,14 @@ namespace InventoryService.MessageBroker
                 //Here we create channel with session and model
                 _channel = _connection.CreateModel();
                 //declare the queue after mentioning name and a few property related to that
-               
+
 
                 _channel.ConfirmSelect();
 
                 _channel.BasicAcks += (sender, ea) => HandleMessageAcknowledge(ea.DeliveryTag, ea.Multiple);
 
-            }catch(BrokerUnreachableException ex)
+            }
+            catch (BrokerUnreachableException ex)
             {
                 Console.WriteLine(ex.ToString());
             }
@@ -64,7 +64,8 @@ namespace InventoryService.MessageBroker
 
                 var dbContext = scope.ServiceProvider.GetRequiredService<ServiceContext>();
 
-                if (multiple) {
+                if (multiple)
+                {
 
                     await dbContext.Outbox.
                         Where(message => message.SequenceNumber <= currentSequenceNumber)
@@ -75,17 +76,19 @@ namespace InventoryService.MessageBroker
                             )
                         );
                 }
-                else { 
-                    Message messageToBeUpdated=await dbContext.Outbox.FirstAsync(message=>message.SequenceNumber==currentSequenceNumber);
+                else
+                {
+                    Message messageToBeUpdated = await dbContext.Outbox.FirstAsync(message => message.SequenceNumber == currentSequenceNumber);
 
-                    if( messageToBeUpdated != null )
+                    if (messageToBeUpdated != null)
                     {
                         messageToBeUpdated.State = Constants.EventStates.EVENT_ACK_COMPLETED;
                     }
 
                     await dbContext.SaveChangesAsync();
                 }
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
@@ -100,7 +103,7 @@ namespace InventoryService.MessageBroker
                 return;
 
 
-           
+
 
             string json = JsonConvert.SerializeObject(message);
 
