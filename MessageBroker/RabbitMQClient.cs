@@ -36,7 +36,7 @@ namespace InventoryService.MessageBroker
                 //Here we specify the Rabbit MQ Server. we use rabbitmq docker image and use it
                 _connectionFactory = new ConnectionFactory
                 {
-                    HostName = "localhost"
+                    HostName = "message-queue",
                 };
                 //Create the RabbitMQ connection using connection factory details as i mentioned above
                 _connection = _connectionFactory.CreateConnection();
