@@ -45,7 +45,7 @@ namespace InventoryService.Controllers
                     Category? category = await _context.Categories.FindAsync(product.CategoryId) ?? throw new Exception($"unable to find category for product {product.Id}");
                     IEnumerable<ProductImage>? productImages = _context.ProductImages.Where(image => image.ProductId == product.Id) ?? throw new Exception($"unable to get images for products {product.Id}");
 
-                    response.Add(new ProductGetResponse(product.Id, category, product.Price, product.Description, product.Address, productImages));
+                    response.Add(new ProductGetResponse(product.Id, category, product.Price, product.Description, product.Address, product.Name,productImages));
                 }
                 return Ok(response);
 
@@ -75,7 +75,7 @@ namespace InventoryService.Controllers
                 Category? category = await _context.Categories.FindAsync(product.CategoryId) ?? throw new Exception($"unable to find category for product {product.Id}");
                 IEnumerable<ProductImage>? productImages = _context.ProductImages.AsNoTracking().Where(image => image.ProductId == product.Id) ?? throw new Exception($"unable to get images for products {product.Id}");
 
-                return Ok(new ProductGetResponse(product.Id, category, product.Price, product.Description, product.Address, productImages));
+                return Ok(new ProductGetResponse(product.Id, category, product.Price, product.Description, product.Address, product.Name, productImages));
             }
             catch (Exception ex)
             {

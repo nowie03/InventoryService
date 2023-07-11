@@ -5,7 +5,7 @@ namespace InventoryService.ResponseModels
     public class ProductGetResponse
     {
         public int Id { get; set; }
-
+        public string Name { get; set; }
 
         public Category Category { get; set; }
 
@@ -20,7 +20,7 @@ namespace InventoryService.ResponseModels
         public IEnumerable<ProductImage> Images { get; set; }
 
 
-        public ProductGetResponse(int id, Category category, double price, string description, string address, IEnumerable<ProductImage> images)
+        public ProductGetResponse(int id, Category category, double price, string description, string address,string name, IEnumerable<ProductImage> images)
         {
             Id = id;
             Category = category;
@@ -28,6 +28,7 @@ namespace InventoryService.ResponseModels
             Description = description;
             Address = address;
             Images = images;
+            Name = name;
         }
     }
 }
