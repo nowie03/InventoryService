@@ -33,7 +33,7 @@ namespace InventoryService.Controllers
             {
 
                 var products = await _context.Products
-                        .Skip((skip - 1) * limit)
+                        .Skip(skip)
                         .Take(limit)
                         .AsNoTracking()
                         .ToListAsync();
